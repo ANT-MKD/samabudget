@@ -1,0 +1,15 @@
+export type Page =
+  | "welcome"
+  | "dashboard"
+  | "add"
+  | "stats"
+  | "profile"
+  | "categories"
+  | "budget"
+  | "savings"
+  | "challenges"
+  | "reports"
+  | "language"
+  | "gamification"
+  | "notifications"
+  | "analytics"; 
