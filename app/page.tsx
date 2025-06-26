@@ -19,6 +19,7 @@ import { LanguagePage } from "@/components/language-page"
 import { GamificationPage } from "@/components/gamification-page"
 import { NotificationsPage } from "@/components/notifications-page"
 import { AnalyticsPage } from "@/components/analytics-page"
+import { Tontine } from "@/components/tontine"
 
 export default function App() {
   // Mettre à jour le type currentPage pour inclure toutes les nouvelles pages
@@ -37,6 +38,7 @@ export default function App() {
     | "gamification"
     | "notifications"
     | "analytics"
+    | "tontine"
   >("welcome")
   const [isLoggedIn, setIsLoggedIn] = useState(false)
 
@@ -71,6 +73,7 @@ export default function App() {
             {currentPage === "gamification" && <GamificationPage onBack={() => setCurrentPage("dashboard")} />}
             {currentPage === "notifications" && <NotificationsPage onBack={() => setCurrentPage("dashboard")} />}
             {currentPage === "analytics" && <AnalyticsPage onBack={() => setCurrentPage("dashboard")} />}
+            {currentPage === "tontine" && <Tontine onBack={() => setCurrentPage("dashboard")} />}
 
             <Navigation currentPage={currentPage} onPageChange={(page) => setCurrentPage(page)} />
           </div>

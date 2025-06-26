@@ -171,6 +171,8 @@ export function Dashboard({ onNavigate }: { onNavigate: (page: Page) => void }) 
         onNavigate("notifications")
       } else if (shortcut.action === "analytics") {
         onNavigate("analytics")
+      } else if (shortcut.action === "tontine") {
+        onNavigate("tontine" as Page)
       }
     }
   }
@@ -232,6 +234,13 @@ export function Dashboard({ onNavigate }: { onNavigate: (page: Page) => void }) 
       color: "bg-pink-100 text-pink-800",
       available: true,
       action: "notifications",
+    },
+    {
+      name: t("tontine.title"),
+      icon: "🤝",
+      color: "bg-teal-100 text-teal-800",
+      available: true,
+      action: "tontine",
     },
   ]
 

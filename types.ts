@@ -12,4 +12,5 @@ export type Page =
   | "language"
   | "gamification"
   | "notifications"
-  | "analytics"; 
+  | "analytics"
+  | "tontine"; 

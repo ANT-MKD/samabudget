@@ -24,8 +24,11 @@ interface LanguageContextType {
   setSpeechEnabled: (enabled: boolean) => void
 }
 
-// Dictionnaire de traductions
-const translations = {
+interface TranslationDict {
+  [key: string]: string;
+}
+
+const translations: { fr: TranslationDict; wo: TranslationDict } = {
   fr: {
     // Navigation
     "nav.home": "Accueil",
@@ -153,6 +156,23 @@ const translations = {
     "tip.track_expenses": "Suivez vos dépenses quotidiennes",
     "tip.set_realistic_goals": "Fixez-vous des objectifs réalistes",
     "tip.review_budget": "Révisez votre budget chaque mois",
+
+    // Tontine
+    "tontine.title": "Tontine",
+    "tontine.description": "Gérez vos tontines, cotisez, suivez les tours et les membres.",
+    "tontine.create": "Créer une tontine",
+    "tontine.join": "Rejoindre une tontine",
+    "tontine.my_tontines": "Mes tontines",
+    "tontine.add_member": "Ajouter un membre",
+    "tontine.member_name": "Nom du membre",
+    "tontine.amount": "Montant de la cotisation",
+    "tontine.next_turn": "Prochain tour",
+    "tontine.turns": "Tours",
+    "tontine.members": "Membres",
+    "tontine.cycle": "Cycle",
+    "tontine.leave": "Quitter la tontine",
+    "tontine.delete": "Supprimer la tontine",
+    "tontine.icon": "Icône de la tontine",
   },
   wo: {
     // Navigation
@@ -281,6 +301,23 @@ const translations = {
     "tip.track_expenses": "Toppte sa jëfandikoo yu bés bu nekk",
     "tip.set_realistic_goals": "Teg paale yu dëgg",
     "tip.review_budget": "Xool sa budget bépp weer",
+
+    // Tontine
+    "tontine.title": "Tontine",
+    "tontine.description": "Toppal sa tontine, yokk, topp tour yi ak nit ñi.",
+    "tontine.create": "Sos tontine",
+    "tontine.join": "Duggal tontine",
+    "tontine.my_tontines": "Sama tontine yi",
+    "tontine.add_member": "Yokk nit",
+    "tontine.member_name": "Tur nit",
+    "tontine.amount": "Xaalis bu tontine",
+    "tontine.next_turn": "Tour bu nekk",
+    "tontine.turns": "Tour yi",
+    "tontine.members": "Nit ñi",
+    "tontine.cycle": "Ronde",
+    "tontine.leave": "Bàyyi tontine",
+    "tontine.delete": "Fey tontine bi",
+    "tontine.icon": "Tontine bu am ay simbool",
   },
 }
 
@@ -330,18 +367,15 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   // Reconnaissance vocale (simulation)
   const startListening = () => {
-    if (!window.webkitSpeechRecognition && !window.SpeechRecognition) {
-      console.log("Speech recognition not supported")
-      return
+    const w = window as any;
+    if (!w.webkitSpeechRecognition && !w.SpeechRecognition) {
+      console.log("Speech recognition not supported");
+      return;
     }
-
-    setIsListening(true)
-
-    // Simulation de reconnaissance vocale
+    setIsListening(true);
     setTimeout(() => {
-      setIsListening(false)
-      // Ici on pourrait traiter la reconnaissance vocale
-    }, 3000)
+      setIsListening(false);
+    }, 3000);
   }
 
   const stopListening = () => {
