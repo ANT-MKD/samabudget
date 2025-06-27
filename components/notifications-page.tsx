@@ -71,6 +71,19 @@ export function NotificationsPage({ onBack }: NotificationsPageProps) {
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [vibrationEnabled, setVibrationEnabled] = useState(true)
 
+  // Ajout d'un état pour l'historique des notifications (exemple local)
+  const [notifications, setNotifications] = useState([
+    { id: 1, title: "Budget dépassé", message: "Votre budget Ndogou est dépassé." },
+    { id: 2, title: "Objectif atteint", message: "Vous avez atteint votre objectif d'épargne !" },
+    { id: 3, title: "Défi en cours", message: "N'oubliez pas de marquer votre défi aujourd'hui." },
+  ])
+
+  // Fonction pour effacer l'historique
+  const clearNotifications = () => {
+    setNotifications([])
+    speak("Historique des notifications effacé")
+  }
+
   const toggleNotification = (id: string) => {
     setNotificationSettings((prev) =>
       prev.map((setting) => (setting.id === id ? { ...setting, enabled: !setting.enabled } : setting)),
@@ -244,10 +257,33 @@ export function NotificationsPage({ onBack }: NotificationsPageProps) {
               Désactiver toutes les notifications
             </Button>
 
-            <Button variant="outline" className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50">
+            <Button 
+              variant="outline" 
+              className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+              onClick={clearNotifications}
+            >
               <Trash2 className="w-4 h-4 mr-2" />
               Effacer l'historique des notifications
             </Button>
+          </CardContent>
+        </Card>
+
+        {/* Affichage de l'historique des notifications */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Historique des notifications</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {notifications.length === 0 ? (
+              <div className="text-gray-500 text-center">Aucune notification</div>
+            ) : (
+              notifications.map((notif) => (
+                <div key={notif.id} className="border-b py-2">
+                  <div className="font-semibold">{notif.title}</div>
+                  <div className="text-sm text-gray-600">{notif.message}</div>
+                </div>
+              ))
+            )}
           </CardContent>
         </Card>
 

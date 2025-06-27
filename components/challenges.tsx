@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { ArrowLeft, Trophy, Target, Calendar, Star, Flame, CheckCircle, Clock } from "lucide-react"
+import { ArrowLeft, Trophy, Target, Calendar, Star, Flame, CheckCircle, Clock, X } from "lucide-react"
 
 interface ChallengesProps {
   onBack: () => void
@@ -25,6 +25,9 @@ interface Challenge {
   isCompleted: boolean
   category: string
   tips: string[]
+  startDate?: string
+  lastMarkedDate?: string
+  completedDate?: string
 }
 
 const mockChallenges: Challenge[] = [
@@ -154,6 +157,9 @@ export function Challenges({ onBack }: ChallengesProps) {
   const [challenges, setChallenges] = useState<Challenge[]>(mockChallenges)
   const [activeTab, setActiveTab] = useState<"active" | "available" | "completed">("active")
   const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null)
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false)
+  const [showAbandonConfirm, setShowAbandonConfirm] = useState<number | null>(null)
+  const [showAchievementUnlocked, setShowAchievementUnlocked] = useState<string | null>(null)
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("fr-FR", {
@@ -178,12 +184,114 @@ export function Challenges({ onBack }: ChallengesProps) {
     }
   }
 
+  const getTodayString = () => {
+    return new Date().toISOString().split('T')[0]
+  }
+
+  const canMarkToday = (challenge: Challenge) => {
+    if (!challenge.isActive) return false
+    const today = getTodayString()
+    return challenge.lastMarkedDate !== today
+  }
+
+  const markTodayAsSuccess = (challengeId: number) => {
+    const today = getTodayString()
+    
+    setChallenges(challenges.map((c) => {
+      if (c.id === challengeId) {
+        const newProgress = c.progress + 1
+        const isCompleted = newProgress >= c.maxProgress
+        
+        const updatedChallenge = {
+          ...c,
+          progress: newProgress,
+          lastMarkedDate: today,
+          isCompleted: isCompleted,
+          completedDate: isCompleted ? today : undefined,
+          isActive: !isCompleted
+        }
+
+        if (isCompleted) {
+          checkAndUnlockAchievements(updatedChallenge)
+        }
+
+        return updatedChallenge
+      }
+      return c
+    }))
+
+    setShowSuccessMessage(true)
+    setTimeout(() => setShowSuccessMessage(false), 3000)
+  }
+
+  const checkAndUnlockAchievements = (completedChallenge: Challenge) => {
+    const completedChallenges = challenges.filter(c => c.isCompleted).length + 1
+    
+    if (completedChallenges === 1) {
+      unlockAchievement("first_challenge", "Premier défi complété ! 🎉")
+    }
+    
+    if (completedChallenges === 5) {
+      unlockAchievement("challenge_warrior", "Guerrier des défis ! ⚔️")
+    }
+    
+    if (completedChallenges === 10) {
+      unlockAchievement("challenge_master", "Maître des défis ! 👑")
+    }
+    
+    if (completedChallenge.difficulty === "Difficile") {
+      unlockAchievement("difficult_challenge", "Défi difficile surmonté ! 💪")
+    }
+    
+    if (completedChallenge.maxProgress >= 30) {
+      unlockAchievement("long_challenge", "Défi de longue durée ! 🏃‍♂️")
+    }
+  }
+
+  const unlockAchievement = (achievementId: string, message: string) => {
+    setShowAchievementUnlocked(message)
+    setTimeout(() => setShowAchievementUnlocked(null), 5000)
+    
+    console.log(`Succès débloqué: ${achievementId}`)
+  }
+
   const startChallenge = (challengeId: number) => {
-    setChallenges(challenges.map((c) => (c.id === challengeId ? { ...c, isActive: true, progress: 0 } : c)))
+    const today = getTodayString()
+    setChallenges(challenges.map((c) => 
+      c.id === challengeId 
+        ? { ...c, isActive: true, progress: 0, startDate: today, lastMarkedDate: undefined }
+        : c
+    ))
   }
 
   const abandonChallenge = (challengeId: number) => {
-    setChallenges(challenges.map((c) => (c.id === challengeId ? { ...c, isActive: false, progress: 0 } : c)))
+    setChallenges(challenges.map((c) => 
+      c.id === challengeId 
+        ? { ...c, isActive: false, progress: 0, startDate: undefined, lastMarkedDate: undefined }
+        : c
+    ))
+    setShowAbandonConfirm(null)
+  }
+
+  const confirmAbandon = (challengeId: number) => {
+    setShowAbandonConfirm(challengeId)
+  }
+
+  const cancelAbandon = () => {
+    setShowAbandonConfirm(null)
+  }
+
+  const getDayStatus = (challenge: Challenge) => {
+    if (!challenge.isActive) return null
+    
+    const today = getTodayString()
+    const lastMarked = challenge.lastMarkedDate
+    
+    if (lastMarked === today) {
+      return { status: "success", text: "Aujourd'hui réussi ✅" }
+    }
+    
+    return { status: "pending", text: "À marquer aujourd'hui" }
   }
 
   const filteredChallenges = challenges.filter((challenge) => {
@@ -195,6 +303,16 @@ export function Challenges({ onBack }: ChallengesProps) {
   const totalRewardsEarned = challenges.filter((c) => c.isCompleted).reduce((sum, c) => sum + c.reward, 0)
   const activeChallengesCount = challenges.filter((c) => c.isActive).length
   const completedChallengesCount = challenges.filter((c) => c.isCompleted).length
+  const availableChallengesCount = challenges.filter((c) => !c.isActive && !c.isCompleted).length
+
+  // Statistiques supplémentaires
+  const totalChallengesStarted = challenges.filter((c) => c.startDate).length
+  const averageProgress = activeChallengesCount > 0 
+    ? Math.round(challenges.filter((c) => c.isActive).reduce((sum, c) => sum + (c.progress / c.maxProgress) * 100, 0) / activeChallengesCount)
+    : 0
+
+  // Défis qui peuvent être marqués aujourd'hui
+  const challengesToMarkToday = challenges.filter((c) => c.isActive && canMarkToday(c))
 
   if (selectedChallenge) {
     const progressPercentage = (selectedChallenge.progress / selectedChallenge.maxProgress) * 100
@@ -303,23 +421,56 @@ export function Challenges({ onBack }: ChallengesProps) {
           <div className="space-y-3">
             {selectedChallenge.isActive ? (
               <>
-                <Button className="w-full h-12 bg-[#2ECC71] hover:bg-[#27AE60]">
+                {(() => {
+                  const dayStatus = getDayStatus(selectedChallenge)
+                  return dayStatus && (
+                    <div className={`p-3 rounded-lg text-center ${
+                      dayStatus.status === "success" 
+                        ? "bg-green-50 border border-green-200 text-green-800" 
+                        : "bg-blue-50 border border-blue-200 text-blue-800"
+                    }`}>
+                      <p className="font-medium">{dayStatus.text}</p>
+                    </div>
+                  )
+                })()}
+
+                <Button 
+                  className={`w-full h-12 ${
+                    canMarkToday(selectedChallenge)
+                      ? "bg-[#2ECC71] hover:bg-[#27AE60]"
+                      : "bg-gray-400 cursor-not-allowed"
+                  }`}
+                  onClick={() => canMarkToday(selectedChallenge) && markTodayAsSuccess(selectedChallenge.id)}
+                  disabled={!canMarkToday(selectedChallenge)}
+                >
                   <CheckCircle className="w-5 h-5 mr-2" />
-                  Marquer aujourd'hui comme réussi
+                  {canMarkToday(selectedChallenge) 
+                    ? "Marquer aujourd'hui comme réussi" 
+                    : "Aujourd'hui déjà marqué ✅"
+                  }
                 </Button>
+
                 <Button
                   variant="outline"
                   className="w-full h-12 text-red-600 border-red-200 hover:bg-red-50"
-                  onClick={() => abandonChallenge(selectedChallenge.id)}
+                  onClick={() => confirmAbandon(selectedChallenge.id)}
                 >
+                  <X className="w-5 h-5 mr-2" />
                   Abandonner le défi
                 </Button>
               </>
             ) : selectedChallenge.isCompleted ? (
-              <Button disabled className="w-full h-12 bg-green-500 text-white">
-                <Trophy className="w-5 h-5 mr-2" />
-                Défi complété ! 🎉
-              </Button>
+              <div className="space-y-3">
+                <Button disabled className="w-full h-12 bg-green-500 text-white">
+                  <Trophy className="w-5 h-5 mr-2" />
+                  Défi complété ! 🎉
+                </Button>
+                {selectedChallenge.completedDate && (
+                  <div className="text-center text-sm text-gray-600">
+                    Complété le {new Date(selectedChallenge.completedDate).toLocaleDateString('fr-FR')}
+                  </div>
+                )}
+              </div>
             ) : (
               <Button
                 className="w-full h-12 bg-[#2ECC71] hover:bg-[#27AE60]"
@@ -330,6 +481,58 @@ export function Challenges({ onBack }: ChallengesProps) {
               </Button>
             )}
           </div>
+
+          {showSuccessMessage && (
+            <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
+              <div className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg animate-bounce">
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="w-5 h-5" />
+                  <span>Jour marqué comme réussi ! 🎉</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showAchievementUnlocked && (
+            <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50">
+              <div className="bg-yellow-500 text-white px-6 py-3 rounded-lg shadow-lg animate-pulse">
+                <div className="flex items-center space-x-2">
+                  <Trophy className="w-5 h-5" />
+                  <span>{showAchievementUnlocked}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showAbandonConfirm && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+                <div className="text-center">
+                  <div className="text-4xl mb-4">⚠️</div>
+                  <h3 className="text-lg font-semibold mb-2">Abandonner le défi ?</h3>
+                  <p className="text-gray-600 mb-4">
+                    Êtes-vous sûr de vouloir abandonner ce défi ? Toute la progression sera perdue.
+                  </p>
+                  <div className="flex space-x-3">
+                    <Button 
+                      variant="outline" 
+                      onClick={cancelAbandon}
+                      className="flex-1"
+                    >
+                      Annuler
+                    </Button>
+                    <Button 
+                      variant="destructive" 
+                      onClick={() => abandonChallenge(showAbandonConfirm)}
+                      className="flex-1"
+                    >
+                      Abandonner
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     )
@@ -349,7 +552,7 @@ export function Challenges({ onBack }: ChallengesProps) {
         {/* Statistiques */}
         <Card className="bg-white/10 backdrop-blur-sm border-0 text-white">
           <CardContent className="p-6">
-            <div className="grid grid-cols-3 gap-4 text-center">
+            <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <div className="flex items-center justify-center mb-2">
                   <Flame className="w-6 h-6 text-orange-300" />
@@ -364,6 +567,9 @@ export function Challenges({ onBack }: ChallengesProps) {
                 <p className="text-sm opacity-90">Complétés</p>
                 <p className="text-2xl font-bold">{completedChallengesCount}</p>
               </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <div className="flex items-center justify-center mb-2">
                   <Star className="w-6 h-6 text-green-300" />
@@ -371,9 +577,53 @@ export function Challenges({ onBack }: ChallengesProps) {
                 <p className="text-sm opacity-90">Récompenses</p>
                 <p className="text-lg font-bold">{formatCurrency(totalRewardsEarned)}</p>
               </div>
+              <div>
+                <div className="flex items-center justify-center mb-2">
+                  <Target className="w-6 h-6 text-blue-300" />
+                </div>
+                <p className="text-sm opacity-90">À marquer</p>
+                <p className="text-lg font-bold">{challengesToMarkToday.length}</p>
+              </div>
             </div>
+
+            {/* Progression moyenne des défis actifs */}
+            {activeChallengesCount > 0 && (
+              <div className="mt-4 pt-4 border-t border-white/20">
+                <div className="flex justify-between text-sm mb-2">
+                  <span>Progression moyenne</span>
+                  <span>{averageProgress}%</span>
+                </div>
+                <div className="w-full bg-white/20 rounded-full h-2">
+                  <div 
+                    className="bg-green-400 h-2 rounded-full transition-all duration-500" 
+                    style={{ width: `${averageProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
+
+        {/* Rappel pour les défis à marquer aujourd'hui */}
+        {challengesToMarkToday.length > 0 && (
+          <Card className="bg-orange-50 border-orange-200 mt-4">
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                  <CheckCircle className="w-5 h-5 text-orange-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-orange-900">
+                    {challengesToMarkToday.length} défi{challengesToMarkToday.length > 1 ? 's' : ''} à marquer aujourd'hui
+                  </h3>
+                  <p className="text-sm text-orange-700">
+                    N'oubliez pas de marquer vos défis actifs comme réussis !
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       <div className="p-6">
@@ -473,16 +723,41 @@ export function Challenges({ onBack }: ChallengesProps) {
                       </Button>
                     ) : challenge.isActive ? (
                       <>
-                        <Button className="flex-1 bg-orange-500 hover:bg-orange-600">
-                          <Flame className="w-4 h-4 mr-2" />
-                          Continuer
+                        <Button 
+                          className={`flex-1 ${
+                            canMarkToday(challenge)
+                              ? "bg-orange-500 hover:bg-orange-600"
+                              : "bg-green-500 hover:bg-green-600"
+                          }`}
+                          onClick={e => { 
+                            e.stopPropagation()
+                            if (canMarkToday(challenge)) {
+                              markTodayAsSuccess(challenge.id)
+                            }
+                          }}
+                        >
+                          {canMarkToday(challenge) ? (
+                            <>
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              Marquer
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              Aujourd'hui ✅
+                            </>
+                          )}
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
                           className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
-                          onClick={e => { e.stopPropagation(); abandonChallenge(challenge.id); }}
+                          onClick={e => { 
+                            e.stopPropagation()
+                            confirmAbandon(challenge.id)
+                          }}
                         >
+                          <X className="w-4 h-4 mr-2" />
                           Annuler
                         </Button>
                       </>

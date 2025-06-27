@@ -48,6 +48,42 @@ export function AddTransaction({ onBack }: AddTransactionProps) {
   const iconOptions = [
     "💸", "🚌", "🍽️", "🛒", "📱", "🏠", "🚗", "✈️", "🎵", "📖", "💡", "🎨", "⚽", "🍕", "☕", "🛍️", "💊", "🔧", "📞", "💰", "🎯"
   ]
+
+  // Suggestions contextuelles par catégorie
+  const categorySuggestions = {
+    // Dépenses
+    "Transport": ["Car rapide", "Taxi", "Essence", "Diesel", "Lavage voiture", "Réparation", "Assurance", "Parking"],
+    "Ndogou": ["Repas midi", "Repas soir", "Petit déjeuner", "Restaurant", "Café", "Thé", "Snack", "Fruits"],
+    "Marché": ["Légumes", "Fruits", "Viande", "Poisson", "Riz", "Huile", "Épices", "Produits ménagers"],
+    "Facture Senelec": ["Facture électricité", "Ampoules", "Chargeurs", "Électroménager", "Climatisation"],
+    "Orange Money": ["Recharge téléphone", "Transfert", "Paiement facture", "Achat crédit", "Orange Money"],
+    "Santé": ["Médicaments", "Consultation médecin", "Analyses", "Dentiste", "Optique", "Pharmacie"],
+    "Éducation": ["Frais scolarité", "Fournitures", "Cantine", "Transport scolaire", "Livres", "Cours"],
+    "Loisirs": ["Cinéma", "Restaurant", "Sortie", "Jeux", "Sport", "Musique", "Théâtre", "Plage"],
+    "Coiffure": ["Coupe", "Tressage", "Coloration", "Soins", "Shampoing", "Coiffure mariage"],
+    "Vêtements": ["Habits", "Chaussures", "Accessoires", "Tailleur", "Uniforme", "Sous-vêtements"],
+    "Essence": ["Essence", "Diesel", "Huile moteur", "Lavage", "Réparation", "Pneus"],
+    "Électricité": ["Facture Senelec", "Ampoules", "Chargeurs", "Électroménager", "Climatisation"],
+    "Eau": ["Facture SDE", "Eau minérale", "Filtres", "Réservoir", "Plomberie"],
+    "Internet": ["Orange", "Free", "Expresso", "Wifi", "Abonnement internet"],
+    "Médecine": ["Médicaments", "Consultation", "Analyses", "Dentiste", "Optique"],
+    "École": ["Frais scolarité", "Fournitures", "Cantine", "Transport scolaire"],
+    "Cadeaux": ["Anniversaire", "Mariage", "Baptême", "Fêtes", "Cadeau famille"],
+    "Sport": ["Gym", "Football", "Natation", "Équipements", "Abonnement sport"],
+
+    // Revenus
+    "Salaire": ["Salaire mensuel", "Prime", "Bonus", "13ème mois", "Horaire supplémentaire"],
+    "Business": ["Commerce", "Boutique", "Vente", "Services", "Produits"],
+    "Freelance": ["Développement", "Design", "Rédaction", "Consultation", "Projet"],
+    "Investissement": ["Actions", "Obligations", "Fonds", "Dividendes", "Placement"],
+    "Location": ["Appartement", "Bureau", "Terrain", "Équipements", "Véhicule"],
+    "Aide famille": ["Transfert", "Soutien", "Don", "Héritage", "Aide parent"],
+    "Pension": ["Retraite", "Pension", "Allocation", "Aide sociale", "Sécurité sociale"],
+    "Vente": ["Objet personnel", "Véhicule", "Immobilier", "Artisanat", "Produits"],
+    "Commission": ["Courtage", "Inter médiaire", "Conseil", "Placement", "Vente"],
+    "Autre revenu": ["Loterie", "Concours", "Cadeau", "Divers", "Autre"],
+  }
+
   const descriptionSuggestions = [
     "Salaire",
     "Courses",
@@ -63,6 +99,56 @@ export function AddTransaction({ onBack }: AddTransactionProps) {
     "Aide famille",
     "Autre"
   ];
+
+  // Obtenir les suggestions contextuelles
+  const getContextualSuggestions = () => {
+    if (category && categorySuggestions[category as keyof typeof categorySuggestions]) {
+      return categorySuggestions[category as keyof typeof categorySuggestions]
+    }
+    return descriptionSuggestions
+  }
+
+  // Suggestions de montants typiques par catégorie
+  const amountSuggestions = {
+    // Dépenses
+    "Transport": [150, 300, 500, 1000, 2500, 5000],
+    "Ndogou": [500, 1000, 1500, 2000, 3000, 5000],
+    "Marché": [1000, 2000, 5000, 10000, 15000, 25000],
+    "Facture Senelec": [5000, 10000, 15000, 20000, 25000, 35000],
+    "Orange Money": [500, 1000, 2000, 5000, 10000],
+    "Santé": [1000, 2000, 5000, 10000, 15000, 25000],
+    "Éducation": [5000, 10000, 15000, 25000, 50000, 100000],
+    "Loisirs": [1000, 2000, 5000, 10000, 15000, 25000],
+    "Coiffure": [1000, 2000, 5000, 10000, 15000],
+    "Vêtements": [2000, 5000, 10000, 15000, 25000, 50000],
+    "Essence": [1000, 2000, 5000, 10000, 15000],
+    "Électricité": [5000, 10000, 15000, 20000, 25000],
+    "Eau": [2000, 5000, 10000, 15000],
+    "Internet": [5000, 10000, 15000, 20000],
+    "Médecine": [1000, 2000, 5000, 10000, 15000],
+    "École": [5000, 10000, 15000, 25000, 50000],
+    "Cadeaux": [1000, 2000, 5000, 10000, 15000, 25000],
+    "Sport": [1000, 2000, 5000, 10000, 15000],
+
+    // Revenus
+    "Salaire": [50000, 75000, 100000, 150000, 200000, 300000],
+    "Business": [10000, 25000, 50000, 100000, 150000, 250000],
+    "Freelance": [15000, 30000, 50000, 75000, 100000, 150000],
+    "Investissement": [5000, 10000, 25000, 50000, 100000],
+    "Location": [25000, 50000, 75000, 100000, 150000, 200000],
+    "Aide famille": [5000, 10000, 25000, 50000, 75000],
+    "Pension": [25000, 50000, 75000, 100000],
+    "Vente": [5000, 10000, 25000, 50000, 100000, 250000],
+    "Commission": [5000, 10000, 25000, 50000, 75000],
+    "Autre revenu": [1000, 5000, 10000, 25000, 50000],
+  }
+
+  const getAmountSuggestions = () => {
+    if (category && amountSuggestions[category as keyof typeof amountSuggestions]) {
+      return amountSuggestions[category as keyof typeof amountSuggestions]
+    }
+    return [1000, 2000, 5000, 10000, 15000, 25000, 50000, 100000]
+  }
 
   const filteredCategories = contextCategories.filter((cat: Category) => cat.type === type)
 
@@ -147,6 +233,28 @@ export function AddTransaction({ onBack }: AddTransactionProps) {
                   FCFA
                 </div>
               </div>
+
+              {/* Suggestions de montants typiques */}
+              {category && (
+                <div className="mt-3">
+                  <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                    Montants typiques pour {category} :
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    {getAmountSuggestions().map((suggestedAmount) => (
+                      <Button
+                        key={suggestedAmount}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setAmount(String(suggestedAmount))}
+                        className="text-xs h-8 px-2 hover:bg-green-50 border-green-200"
+                      >
+                        {formatCurrency(String(suggestedAmount))}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -196,12 +304,35 @@ export function AddTransaction({ onBack }: AddTransactionProps) {
           {/* Description avec suggestions */}
           <Card>
             <CardContent className="p-6">
-              <Label htmlFor="description" className="text-lg font-semibold">Nom de la dépense ou du revenu</Label>
+              <Label htmlFor="description" className="text-lg font-semibold">Nom de la {type === "expense" ? "dépense" : "revenu"}</Label>
+              
+              {/* Suggestions contextuelles si une catégorie est sélectionnée */}
+              {category && (
+                <div className="mb-3">
+                  <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                    Suggestions pour {category} :
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    {getContextualSuggestions().slice(0, 6).map((suggestion) => (
+                      <Button
+                        key={suggestion}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setDescription(suggestion)}
+                        className="text-xs h-8 px-2 hover:bg-green-50 border-green-200"
+                      >
+                        {suggestion}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <Command>
-                <CommandInput placeholder="Ex: Courses, Salaire, Transfert..." />
+                <CommandInput placeholder={`Ex: ${getContextualSuggestions()[0] || "Courses, Salaire, Transfert..."}`} />
                 <CommandList>
-                  {descriptionSuggestions.length === 0 && <CommandEmpty>Aucune suggestion</CommandEmpty>}
-                  {descriptionSuggestions.map((suggestion) => (
+                  {getContextualSuggestions().length === 0 && <CommandEmpty>Aucune suggestion</CommandEmpty>}
+                  {getContextualSuggestions().map((suggestion) => (
                     <CommandItem key={suggestion} value={suggestion} onSelect={() => setDescription(suggestion)}>
                       {suggestion}
                     </CommandItem>

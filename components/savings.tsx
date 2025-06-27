@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
 import { useState } from "react"
@@ -57,10 +58,12 @@ const mockSavingsGoals: SavingsGoal[] = [
   },
 ]
 
+type NewGoalState = { title: string; targetAmount: string; deadline: string; icon: string }
+
 export function Savings({ onBack }: SavingsProps) {
   const { savingsGoals, addSavingsGoal, updateSavingsGoal, deleteSavingsGoal } = useAppData()
   const [isAdding, setIsAdding] = useState(false)
-  const [newGoal, setNewGoal] = useState({
+  const [newGoal, setNewGoal] = useState<NewGoalState>({
     title: "",
     targetAmount: "",
     deadline: "",
@@ -68,6 +71,11 @@ export function Savings({ onBack }: SavingsProps) {
   })
   const [editingGoalId, setEditingGoalId] = useState<number | null>(null)
   const [editGoal, setEditGoal] = useState<{ title: string; targetAmount: string; deadline: string; icon: string }>({ title: "", targetAmount: "", deadline: "", icon: "" })
+
+  // Ajout pour le modal d'ajout/retrait d'argent
+  const [showAmountModal, setShowAmountModal] = useState<{ goalId: number; type: 'add' | 'remove' } | null>(null)
+  const [amountValue, setAmountValue] = useState("")
+  const [amountError, setAmountError] = useState("")
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("fr-FR", {
@@ -150,6 +158,40 @@ export function Savings({ onBack }: SavingsProps) {
     setEditGoal({ title: "", targetAmount: "", deadline: "", icon: "" });
   };
 
+  // Fonction pour ouvrir le modal
+  const openAmountModal = (goalId: number, type: 'add' | 'remove') => {
+    setShowAmountModal({ goalId, type })
+    setAmountValue("")
+    setAmountError("")
+  }
+
+  // Fonction pour fermer le modal
+  const closeAmountModal = () => {
+    setShowAmountModal(null)
+    setAmountValue("")
+    setAmountError("")
+  }
+
+  // Fonction pour valider l'ajout/retrait
+  const handleAmountChange = () => {
+    if (!amountValue || isNaN(Number(amountValue)) || Number(amountValue) <= 0) {
+      setAmountError("Montant invalide")
+      return
+    }
+    const amount = Number(amountValue)
+    const goal = savingsGoals.find((g: SavingsGoal) => g.id === showAmountModal?.goalId)
+    if (!goal) return
+    let newAmount = goal.currentAmount
+    if (showAmountModal?.type === 'add') {
+      newAmount += amount
+    } else {
+      newAmount -= amount
+      if (newAmount < 0) newAmount = 0
+    }
+    updateSavingsGoal(goal.id, { currentAmount: newAmount })
+    closeAmountModal()
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -215,7 +257,7 @@ export function Savings({ onBack }: SavingsProps) {
                   <CommandList>
                     {savingsSuggestions.length === 0 && <CommandEmpty>Aucune suggestion</CommandEmpty>}
                     {savingsSuggestions.map((suggestion) => (
-                      <CommandItem key={suggestion} value={suggestion} onSelect={() => setNewGoal(g => ({ ...g, title: suggestion }))}>
+                      <CommandItem key={suggestion} value={suggestion} onSelect={() => setNewGoal({ ...newGoal, title: suggestion })}>
                         {suggestion}
                       </CommandItem>
                     ))}
@@ -303,7 +345,7 @@ export function Savings({ onBack }: SavingsProps) {
                           <CommandList>
                             {savingsSuggestions.length === 0 && <CommandEmpty>Aucune suggestion</CommandEmpty>}
                             {savingsSuggestions.map((suggestion) => (
-                              <CommandItem key={suggestion} value={suggestion} onSelect={() => setEditGoal(v => ({ ...v, title: suggestion }))}>
+                              <CommandItem key={suggestion} value={suggestion} onSelect={() => setEditGoal({ ...editGoal, title: suggestion })}>
                                 {suggestion}
                               </CommandItem>
                             ))}
@@ -342,34 +384,41 @@ export function Savings({ onBack }: SavingsProps) {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                       <div className="flex items-center space-x-3">
                         <div className={`w-12 h-12 ${goal.color} rounded-full flex items-center justify-center`}>
                           <span className="text-2xl">{goal.icon}</span>
                         </div>
                         <div>
-                          <p className="font-medium">{goal.title}</p>
-                          <div className="flex items-center space-x-2 text-xs">
-                            <span>Objectif : {formatCurrency(goal.targetAmount)}</span>
-                            <span>•</span>
-                            <span>Limite : {goal.deadline}</span>
+                          <p className="font-medium text-lg">{goal.title}</p>
+                          <p className="text-sm text-gray-500">
+                            {formatCurrency(goal.currentAmount)} / {formatCurrency(goal.targetAmount)}
+                          </p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <Button size="sm" variant="outline" onClick={() => openAmountModal(goal.id, 'add')} className="text-green-600 border-green-200">+ Ajouter</Button>
+                            <Button size="sm" variant="outline" onClick={() => openAmountModal(goal.id, 'remove')} className="text-red-600 border-red-200">- Retirer</Button>
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                            <div
-                              className="bg-green-500 h-2 rounded-full transition-all duration-500"
-                              style={{ width: `${Math.min((goal.currentAmount / goal.targetAmount) * 100, 100)}%` }}
-                            />
-                          </div>
-                          <div className="text-xs mt-1 text-gray-600">{formatCurrency(goal.currentAmount)} / {formatCurrency(goal.targetAmount)} ({Math.round((goal.currentAmount / goal.targetAmount) * 100)}%)</div>
                         </div>
                       </div>
-                      <div className="flex space-x-2">
-                        <Button variant="ghost" size="icon" className="text-gray-500" onClick={() => startEdit(goal)}>
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13h3l8-8a2.828 2.828 0 00-4-4l-8 8v3zm0 0v3a2 2 0 002 2h3" /></svg>
-                        </Button>
-                        <Button variant="ghost" size="icon" className="text-red-500" onClick={() => deleteSavingsGoal(goal.id)}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                      <div className="flex flex-col items-end">
+                        <div className="flex items-center gap-2 mb-2">
+                          {isCompleted && <Badge className="bg-green-500 text-white">Complété</Badge>}
+                          {!isCompleted && daysRemaining >= 0 && (
+                            <Badge className="bg-blue-100 text-blue-800">{daysRemaining} jours restants</Badge>
+                          )}
+                          {!isCompleted && daysRemaining < 0 && (
+                            <Badge className="bg-yellow-100 text-yellow-800">En retard</Badge>
+                          )}
+                        </div>
+                        <div className="w-32 bg-gray-200 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full transition-all duration-500 ${getProgressColor(percentage)}`}
+                            style={{ width: `${Math.min(percentage, 100)}%` }}
+                          />
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1 text-right">
+                          Reste : {formatCurrency(remaining > 0 ? remaining : 0)}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -396,6 +445,34 @@ export function Savings({ onBack }: SavingsProps) {
             </div>
           </CardContent>
         </Card>
+
+        {/* Modal d'ajout/retrait d'argent */}
+        {showAmountModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-xs w-full shadow-lg">
+              <h3 className="text-lg font-semibold mb-4">
+                {showAmountModal.type === 'add' ? 'Ajouter de l\'argent' : 'Retirer de l\'argent'}
+              </h3>
+              <Input
+                type="number"
+                min="1"
+                value={amountValue}
+                onChange={e => setAmountValue(e.target.value)}
+                placeholder="Montant (FCFA)"
+                className="mb-2"
+              />
+              {amountError && <div className="text-red-600 text-sm mb-2">{amountError}</div>}
+              <div className="flex gap-2 mt-2">
+                <Button className="flex-1 bg-[#2ECC71] hover:bg-[#27AE60]" onClick={handleAmountChange}>
+                  Valider
+                </Button>
+                <Button variant="outline" className="flex-1" onClick={closeAmountModal}>
+                  Annuler
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

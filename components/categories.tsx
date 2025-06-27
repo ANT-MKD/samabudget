@@ -53,6 +53,35 @@ export function Categories({ onBack }: CategoriesProps) {
     "bg-gray-100",
   ]
 
+  // Suggestions de catégories populaires
+  const expenseSuggestions = [
+    { name: "Coiffure", icon: "💇‍♀️", color: "bg-pink-100", examples: ["Coupe", "Tressage", "Coloration", "Soins"] },
+    { name: "Essence", icon: "⛽", color: "bg-yellow-100", examples: ["Essence", "Diesel", "Huile moteur", "Lavage"] },
+    { name: "Vêtements", icon: "👕", color: "bg-purple-100", examples: ["Habits", "Chaussures", "Accessoires", "Tailleur"] },
+    { name: "Électricité", icon: "⚡", color: "bg-yellow-100", examples: ["Facture Senelec", "Ampoules", "Chargeurs", "Électroménager"] },
+    { name: "Eau", icon: "💧", color: "bg-blue-100", examples: ["Facture SDE", "Eau minérale", "Filtres", "Réservoir"] },
+    { name: "Internet", icon: "🌐", color: "bg-indigo-100", examples: ["Orange", "Free", "Expresso", "Wifi"] },
+    { name: "Médecine", icon: "💊", color: "bg-red-100", examples: ["Médicaments", "Consultation", "Analyses", "Dentiste"] },
+    { name: "École", icon: "📚", color: "bg-green-100", examples: ["Frais scolarité", "Fournitures", "Cantine", "Transport scolaire"] },
+    { name: "Cadeaux", icon: "🎁", color: "bg-pink-100", examples: ["Anniversaire", "Mariage", "Baptême", "Fêtes"] },
+    { name: "Sport", icon: "⚽", color: "bg-green-100", examples: ["Gym", "Football", "Natation", "Équipements"] },
+  ]
+
+  const incomeSuggestions = [
+    { name: "Salaire", icon: "💰", color: "bg-green-100", examples: ["Salaire mensuel", "Prime", "Bonus", "13ème mois"] },
+    { name: "Business", icon: "💼", color: "bg-blue-100", examples: ["Commerce", "Boutique", "Vente", "Services"] },
+    { name: "Freelance", icon: "💻", color: "bg-purple-100", examples: ["Développement", "Design", "Rédaction", "Consultation"] },
+    { name: "Investissement", icon: "📈", color: "bg-green-100", examples: ["Actions", "Obligations", "Fonds", "Dividendes"] },
+    { name: "Location", icon: "🏠", color: "bg-yellow-100", examples: ["Appartement", "Bureau", "Terrain", "Équipements"] },
+    { name: "Aide famille", icon: "👨‍👩‍👧‍👦", color: "bg-pink-100", examples: ["Transfert", "Soutien", "Don", "Héritage"] },
+    { name: "Pension", icon: "👴", color: "bg-gray-100", examples: ["Retraite", "Pension", "Allocation", "Aide sociale"] },
+    { name: "Vente", icon: "🛒", color: "bg-orange-100", examples: ["Objet personnel", "Véhicule", "Immobilier", "Artisanat"] },
+    { name: "Commission", icon: "💸", color: "bg-blue-100", examples: ["Courtage", "Inter médiaire", "Conseil", "Placement"] },
+    { name: "Autre revenu", icon: "🎯", color: "bg-indigo-100", examples: ["Loterie", "Concours", "Cadeau", "Divers"] },
+  ]
+
+  const currentSuggestions = activeTab === "expense" ? expenseSuggestions : incomeSuggestions
+
   const filteredCategories = categories.filter((c: Category) => c.type === activeTab)
 
   const handleAddCategory = () => {
@@ -154,6 +183,38 @@ export function Categories({ onBack }: CategoriesProps) {
                   placeholder="Ex: Coiffure, Essence..."
                   className="mt-1 dark:bg-slate-800 dark:text-white dark:border-slate-700"
                 />
+              </div>
+
+              {/* Suggestions de catégories populaires */}
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                  Suggestions populaires pour les {activeTab === "expense" ? "dépenses" : "revenus"}
+                </Label>
+                <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto">
+                  {currentSuggestions.map((suggestion, index) => (
+                    <Button
+                      key={index}
+                      variant="outline"
+                      onClick={() => setNewCategory({
+                        name: suggestion.name,
+                        icon: suggestion.icon,
+                        color: suggestion.color,
+                      })}
+                      className="h-auto p-3 justify-start text-left hover:bg-green-50 border-green-200"
+                    >
+                      <div className="flex items-center space-x-3 w-full">
+                        <span className="text-xl">{suggestion.icon}</span>
+                        <div className="flex-1">
+                          <p className="font-medium">{suggestion.name}</p>
+                          <p className="text-xs text-gray-500">
+                            Ex: {suggestion.examples.slice(0, 2).join(", ")}
+                            {suggestion.examples.length > 2 && "..."}
+                          </p>
+                        </div>
+                      </div>
+                    </Button>
+                  ))}
+                </div>
               </div>
 
               <div>
